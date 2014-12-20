@@ -14,9 +14,9 @@
 *Date 2014-9-26
 */
 (function($,window,document,undefined){
-	
+	window.timerFID = '';
 	var zView = function (element,options){
-this.$element = element;
+		this.$element = element;
 		this.options = $.extend(true,{
 			animate: 'animate',
 			direction : 'horizontal',//滚动方向,vertical重直滚动,horizontal水平滚动
@@ -31,7 +31,7 @@ this.$element = element;
 			controlClass:'control',
 			sliderTimer:false,
 			duration: 4000,		//播放频率
-			speed : 800,		//滚动速度
+			speed : 1200,		//滚动速度
 			auto : true						//是否自动播放
 		},options);
 		this.index = 0;
@@ -64,26 +64,23 @@ this.$element = element;
 				$control.find('.prevBtn').css({'left':'10px','z-index':'4','top':top+'px'});
 				$control.find('.nextBtn').css({'right':'10px','z-index':'4','top':top+'px'});
 			}
-			if(this.options.animate == 'fade'){//如果图片是淡入淡出动画，强制设置第一个图片为显示
-				this.item.css({'display':'none'});
-				this.item.eq(0).css({'display':'block'});
-			}
+			this.item.first().css({"left":0});
 			/*获取导航元素*/
 			if(this.options.showDefNav){
 				 this.$nav = this.$element.find('.nav span');
 			}else{
 				this.$nav =this.$element.find('.'+this.options.navClass).children();
 			}
-			/*上一张下一张*/
-			this.prev_and_next('prev');
-			this.prev_and_next('next');
+			//*上一张下一张*/
+			//this.prev_and_next('prev');
+			//this.prev_and_next('next');
 
 			/*绑定事件*/
-			this.bind(this.options.event);
+			//this.bind(this.options.event);
 			/*是否自动播放*/
 			if(this.options.auto){
 				this.startAm();
-				this.sliderTimer();
+				
 			}
 		},
 		createNav:function(){
@@ -126,87 +123,91 @@ this.$element = element;
 						$(that.itemWrap).stop();//停止当前所有动面，如果没有这一句，在快速切换导航时，图片将一直切换,直到所有动画执行完并，造成效果不佳。
 						that.timerBar.stop();
 						that.timerBar.css({'width':0});
-						that.animate();//图片动画
+						//that.animate();//图片动画
 
-						clearInterval(that.$element.timer);
+						that.stopAm()
 			}).mouseout(function(){
 						if(that.options.auto){
-							that.play();
+							//that.startAm();
 						}
 			})
 		},
 		sliderNext:function(){
-			var that = this;
-			this.index++;
-
-			console.log(this.index);
-			if(this.index >= this.number){
-				this.index =0;
-				this.next = this.index+1;
+			var that = this,nextItem,next_index;
+			if(that.index == that.number -1){
+				next_index = 0;
+			}else{
+				next_index = that.index+1;
 			}
-			if(this.index <0){
-				this.index= this.number-1;
-				this.next =0;
-			}
-			this.next = this.index+1;
-			var nextItem = this.item.eq(this.next);
+			nextItem = this.item.eq(next_index);
 			nextItem.stop(false,true);
 			nextItem.css({'left':'-150%'});
 			this.sliderTimer(function(){
-				that.timerBar.stop(false,true).css({'width':0});
-				that.animateOut(function(){
-					that.animateIn();
+				that.timerBar.stop()
+				that.timerBar.css({'width': '0'});
+				var index = that.index;	
+				that.stopAm();
+				that.animateOut(index,function(){
+				
+					//that.animateIn(index);
 				});
 			});
+			
 		},
 		startAm : function(){
 				var that = this;//setInterval中的this是指向window对象，所以也要储存起来，以便在setInterval中使用
-				this.$element.timer = setInterval(function(){
+				window.timerFID = setInterval(function(){
 					that.sliderNext();
-				},this.options.duration);
+				},100);
 		},
 		stopAm : function(){
-			clearInterval(this.$element.timer);
+			console.log(window.timerFID+'stopAm');
+			clearInterval(window.timerFID);
 		},
-		animateIn:function(){
-			var that= this;
-			var item = this.item.eq(this.next);
-			this.stopAm();
+		animateIn:function(index){
+			var that= this,current_index;
+			that.stopAm();
+			
+			
+			if(index == that.number -1){
+				current_index = 0;
+			}else{
+				current_index = that.index+1;
+			}
+			var item = this.item.eq(current_index);
 			if(this.options.showDefNav){//是否使用默认导航
 				this.$nav.removeClass('on').css({'color':this.options.navColor});
-				this.$nav.eq(this.next).addClass('on').css({'color':this.options.navHoverColor});
+				this.$nav.eq(current_index).addClass('on').css({'color':this.options.navHoverColor});
 			}else{
 				this.$nav.removeClass('on');
-				this.$nav.eq(this.next).addClass('on')
+				this.$nav.eq(current_index).addClass('on')
 			}
-			item.animate({'left':0,'top':0},that.speed,'easeOutCubic',function(){
-				that.startAm();
-			});
+
+			/*$('.slider-bg').fadeOut(1,function(){
+				$('.slider-bg').css({'background':"none"}).delay(1).fadeIn(1, function(){*/
+				
+					item.animate({'left':'0','top':'0'},1200,'easeOutCubic',function(){
+						that.index = current_index;
+									console.log(window.timerFID);
+						//that.startAm();
+					});
+			/*	})
+			})*/
 		},
-		animateOut:function(callback){
+		animateOut:function(index,callback){
 			var that= this;
 			var item = this.item.eq(this.index);
-			if(that.options.direction == 'vertical'){
-				item.animate({
-						top: -that.height*that.index+'px'
-				},that.options.speed,'easeInQuad');
-			}else{
-				
-				item.animate({
-						left: '150%' 
-				},that.options.speed,'easeOutCubic',function(){
-					item.css({'left':'-150%'});
-					callback && callback();
-				});
-			}
+			that.stopAm();
+			item.animate({'left': '150%'},1000,'easeOutCubic',function(){
+				item.css({'left':'-150%'});
+				callback && callback();
+					
+			});
 		},
 		sliderTimer:function(callback){
-			this.timerBar.animate({width:this.width},this.options.duration,'linear',callback);
-		},
-		fade:function(){
+			var that = this;
 			
-			this.itemWrap.children(':visible').stop().fadeOut(this.options.fadeOutTime);
-			this.item.eq(this.index).stop().fadeIn(this.options.fadeInTime);
+			that.timerBar.animate({"width":"100%"},5500,'linear',callback);
 		}
 	}
 	$.fn.zView = function(options){
