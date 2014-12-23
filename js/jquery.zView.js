@@ -14,7 +14,6 @@
 *Date 2014-9-26
 */
 (function($,window,document,undefined){
-	window.timerFID = '';
 	var zView = function (element,options){
 		this.$element = element;
 		this.options = $.extend(true,{
@@ -31,7 +30,7 @@
 			controlClass:'control',
 			sliderTimer:false,
 			duration: 4000,		//播放频率
-			speed : 1200,		//滚动速度
+			speed : 800,		//滚动速度
 			auto : true						//是否自动播放
 		},options);
 		this.index = 0;
@@ -50,7 +49,7 @@
 			this.$element.css({'position':'relative'});
 			this.itemWrap.css({'position':'relative',top:'0px',left:'0px'});
 			if(this.options.direction == 'horizontal' && this.options.animate == 'animate'){
-				this.item.css({'position':'absolute','left':-this.width+'px'});
+				this.item.css({'position':'absolute','left':'-150%'});
 			}
 			/*设置默认的导航*/
 			if(this.options.showDefNav){
@@ -76,10 +75,10 @@
 			//this.prev_and_next('next');
 
 			/*绑定事件*/
-			//this.bind(this.options.event);
+			this.bind(this.options.event);
 			/*是否自动播放*/
 			if(this.options.auto){
-				this.startAm();
+				that.startAm();
 				
 			}
 		},
@@ -121,97 +120,94 @@
 							that.$nav.eq(that.index).addClass('on')
 						}
 						$(that.itemWrap).stop();//停止当前所有动面，如果没有这一句，在快速切换导航时，图片将一直切换,直到所有动画执行完并，造成效果不佳。
-						that.timerBar.stop();
+						
 						that.timerBar.css({'width':0});
+						that.timerBar.stop();
 						//that.animate();//图片动画
-
-						that.stopAm()
+						//that.stopAm()
 			}).mouseout(function(){
 						if(that.options.auto){
+						//that.timerBar.stop()
 							//that.startAm();
 						}
 			})
 		},
-		sliderNext:function(){
-			var that = this,nextItem,next_index;
-			if(that.index == that.number -1){
-				next_index = 0;
-			}else{
-				next_index = that.index+1;
-			}
-			nextItem = this.item.eq(next_index);
-			nextItem.stop(false,true);
-			nextItem.css({'left':'-150%'});
-			this.sliderTimer(function(){
-				that.timerBar.stop()
-				that.timerBar.css({'width': '0'});
-				var index = that.index;	
-				that.stopAm();
-				that.animateOut(index,function(){
-				
-					//that.animateIn(index);
-				});
-			});
-			
+		sliderTimer:function(callback){
+			var that = this;
+			that.timerBar.animate({"width":"100%"},5500,'linear',callback);
 		},
 		startAm : function(){
 				var that = this;//setInterval中的this是指向window对象，所以也要储存起来，以便在setInterval中使用
-				window.timerFID = setInterval(function(){
+				that.$element.timerID = setInterval(function(){
 					that.sliderNext();
 				},100);
 		},
 		stopAm : function(){
-			console.log(window.timerFID+'stopAm');
-			clearInterval(window.timerFID);
+			var that = this;
+			clearInterval(that.$element.timerID);
+		},
+		sliderNext:function(){
+			var that = this,nextItem,next_index;
+			that.stopAm();
+			if(that.index == that.number -1){
+				next_index = 0;
+				nextItem = that.item.eq(0)
+			}else{
+				next_index = that.index+1;
+				nextItem = that.item.eq(that.index+1)
+			}
+			nextItem = this.item.eq(next_index);
+			nextItem.stop(false,true);
+			nextItem.css({'left':'-150%'});
+			that.sliderTimer(function(){
+				that.timerBar.stop();
+				that.timerBar.css({'width': '0'});
+				var index = that.index;	
+				that.animateOut(index,function(){
+					that.animateIn(index);
+				});
+			});
+			
 		},
 		animateIn:function(index){
-			var that= this,current_index;
+			var that= this,current_index,item;
 			that.stopAm();
 			
 			
 			if(index == that.number -1){
 				current_index = 0;
+				item = that.item.eq(0)
 			}else{
 				current_index = that.index+1;
+				item = that.item.eq(that.index+1)
 			}
-			var item = this.item.eq(current_index);
-			if(this.options.showDefNav){//是否使用默认导航
-				this.$nav.removeClass('on').css({'color':this.options.navColor});
-				this.$nav.eq(current_index).addClass('on').css({'color':this.options.navHoverColor});
+			//var item = this.item.eq(current_index);
+			if(that.options.showDefNav){//是否使用默认导航
+				that.$nav.removeClass('on').css({'color':that.options.navColor});
+				that.$nav.eq(current_index).addClass('on').css({'color':that.options.navHoverColor});
 			}else{
-				this.$nav.removeClass('on');
-				this.$nav.eq(current_index).addClass('on')
+				that.$nav.removeClass('on');
+				that.$nav.eq(current_index).addClass('on')
 			}
 
-			/*$('.slider-bg').fadeOut(1,function(){
-				$('.slider-bg').css({'background':"none"}).delay(1).fadeIn(1, function(){*/
-				
-					item.animate({'left':'0','top':'0'},1200,'easeOutCubic',function(){
-						that.index = current_index;
-									console.log(window.timerFID);
-						//that.startAm();
-					});
-			/*	})
-			})*/
+			item.animate({'left':'0','top':'0'},1200,'easeOutCubic',function(){
+				that.index = current_index;
+				that.startAm();
+			});
 		},
 		animateOut:function(index,callback){
 			var that= this;
-			var item = this.item.eq(this.index);
-			that.stopAm();
-			item.animate({'left': '150%'},1000,'easeOutCubic',function(){
+			var item = that.item.eq(index);
+			item.animate({'left': '150%'},1200,'easeOutCubic',function(){
 				item.css({'left':'-150%'});
-				callback && callback();
-					
+				callback&&callback();
 			});
-		},
-		sliderTimer:function(callback){
-			var that = this;
-			
-			that.timerBar.animate({"width":"100%"},5500,'linear',callback);
 		}
 	}
 	$.fn.zView = function(options){
 		var obj = new zView(this,options);
 		return obj.init();
 	}
-})(jQuery,window,document)
+})(jQuery,window,document);
+
+
