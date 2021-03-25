@@ -1,4 +1,4 @@
 zView
 =========
 
-jquery图片轮播插件森
+jquery图片轮播插件
